@@ -4,6 +4,7 @@ import type { AgentInputItem } from "@openai/agents";
 import * as readline from "readline";
 import { stdin as input, stdout as output } from "node:process";
 import { allTools } from "../tools/index.js";
+import { logRunItems, toPrettyJson } from "../shared/log.js";
 
 // this is system prompt for the agent
 const ASSISTANT_INSTRUCTIONS = `
@@ -24,18 +25,6 @@ const assistantAgent = new Agent({
   model: "gpt-5-mini",
   tools: allTools,
 });
-
-// tool arguments arrive as a JSON string, tool outputs as objects or plain strings
-const toPrettyJson = (value: unknown): string => {
-  if (typeof value === "string") {
-    try {
-      value = JSON.parse(value);
-    } catch {
-      return value as string;
-    }
-  }
-  return JSON.stringify(value, null, 2);
-};
 
 const rl = readline.createInterface({
   input,
@@ -64,14 +53,7 @@ for await (const line of rl) {
   history.push({ role: "user", content: userInput });
   const result = await run(assistantAgent, history);
 
-  for (const item of result.newItems) {
-    if (item.type === "tool_call_item" && item.rawItem.type === "function_call") {
-      console.log(`[tool input] ${item.rawItem.name}\n${toPrettyJson(item.rawItem.arguments)}`);
-    }
-    if (item.type === "tool_call_output_item" && item.rawItem.type === "function_call_result") {
-      console.log(`[tool output] ${item.rawItem.name}\n${toPrettyJson(item.output)}`);
-    }
-  }
+  logRunItems(result.newItems);
 
   console.log(`Assistant:\n${toPrettyJson(result.finalOutput)}\n`);
   history = result.history;

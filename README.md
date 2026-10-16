@@ -82,7 +82,7 @@ The smallest working agent: a name, instructions and a model. It shows:
 
 - **Dynamic instructions**: the system prompt changes with a `USER_LOCATION` env variable.
 - **A chat loop**: `readline` with `for await`, so the agent keeps chatting until you type `exit`.
-- **Conversation history**: each turn sends the previous messages, so the agent remembers your name.
+- **Conversation history**: each turn sends the previous messages, so the agent remembers your name. After a run, `history = result.history` keeps the whole conversation, so you don't have to rebuild assistant messages by hand.
 
 `math-agent.ts` is a second agent whose system prompt limits it to step-by-step math tutoring.
 

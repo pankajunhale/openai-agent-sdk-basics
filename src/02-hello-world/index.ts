@@ -28,28 +28,30 @@ const rl = readline.createInterface({
   input,
   output,
 });
-const history: AgentInputItem[] = [];
+let history: AgentInputItem[] = [];
 console.log('Chat started. Type "exit" to quit.\n');
 console.log(`System: ${buildInstructionsByLocation()}\n`);
-while (true) {
-  const userInput = await new Promise<string>((resolve) => {
-    rl.question("User:", (answer) => {
-      resolve(answer);
-    });
-  });
+
+rl.setPrompt("User: ");
+rl.prompt();
+
+// for-await ends the loop (and closes readline) on "exit", Ctrl+C or end of input
+for await (const line of rl) {
+  const userInput = line.trim();
   if (userInput.toLowerCase() === "exit") {
     rl.close();
     console.log("Chat ended.");
     break;
   }
+  if (!userInput) {
+    rl.prompt();
+    continue;
+  }
+
   history.push({ role: "user", content: userInput });
   const result = await run(helloAgent, history);
   console.log(`Assistant: ${result.finalOutput}\n`);
-  history.push({
-    role: "assistant",
-    status: "completed",
-    content: [{ type: "output_text", text: result.finalOutput || "" }],
-  });
+  history = result.history;
+  rl.prompt();
 }
-rl.close();
 console.log("Bye!");
