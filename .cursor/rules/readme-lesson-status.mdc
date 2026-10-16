@@ -1,0 +1,20 @@
+---
+description: Keep README.md up to date whenever a lesson is completed
+alwaysApply: true
+---
+
+# Update the README when a lesson is completed
+
+Whenever a lesson in `src/NN-topic/` is completed (the developer says it's done, or you finish building and verifying it), update `README.md` in the same change:
+
+1. **Status table** ("Learning topics"): change the lesson's status from ⏳ to ✅.
+2. **Lesson section** (`### N. Topic`): replace the generic description with what was actually built:
+   - The scenario and agent(s), with a short code snippet of the key SDK feature
+   - "Things to notice": the concepts it demonstrates
+   - Pitfalls or errors hit while building it, and how they were fixed
+3. **Project structure**: add any new folders (e.g. a new `src/tools/<domain>/`).
+4. **Tech stack**: update if a dependency was added.
+
+Read the lesson's files before writing, so the README matches the real code. Keep each section short and in the same style as the existing completed lessons.
+
+If the developer then asks to commit, follow the commit-and-push rule (typecheck first, always ask before pushing).
