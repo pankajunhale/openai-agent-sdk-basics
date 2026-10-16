@@ -1,0 +1,32 @@
+---
+description: Project overview, layout, commands and workflow for the OpenAI Agents SDK study app
+alwaysApply: true
+---
+
+# OpenAI Agents SDK study app
+
+A TypeScript learning project following Piyush Garg's 15-video OpenAI Agents SDK series. One folder per video in `src/NN-topic/`; the README "Learning topics" table tracks status.
+
+## Stack
+- Node 22, ESM (`"type": "module"`), TypeScript 7 strict, run with `tsx` (no build step)
+- `@openai/agents` 0.20, `@openai/agents-core` 0.20 (only for `/extensions`), `zod` 4, `axios`, `dotenv`
+- Default model: `gpt-5-mini`
+
+## Layout
+- `src/NN-topic/index.ts`: lesson entry point (multi-agent lessons also have `agents.ts`)
+- `src/tools/<domain>/`: reusable tools, exported from `src/tools/index.ts`
+- `src/shared/log.ts`: `toPrettyJson` and `logRunItems` for tool and handoff logging
+
+## Code style
+- Double quotes, 2-space indent
+- Relative imports end in `.js`, even for `.ts` files (NodeNext): `import { allTools } from "../tools/index.js";`
+- Use `import type` for type-only imports
+- Every lesson file starts with `import "dotenv/config";`
+
+## Commands
+- `npm start src/NN-topic/index.ts` runs a lesson; `npm run typecheck` must pass after every change
+- Chat lessons read stdin, so test them with a temporary `_try.ts` script that runs fixed questions, then delete it. Don't pipe input into the chat loop.
+
+## Safety
+- Never read, print or commit `.env`; `.env.example` holds only a placeholder
+- Before committing, check `git status` doesn't list `.env` or `node_modules`

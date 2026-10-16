@@ -1,0 +1,41 @@
+---
+description: OpenAI Agents SDK 0.20 patterns and pitfalls found while building this project
+globs: src/**/*.ts
+alwaysApply: false
+---
+
+# Agents SDK patterns
+
+## Schemas (zod 4)
+- `outputType` and tool `parameters` need a **zod schema**, not a TS interface (interfaces don't exist at runtime). Derive types with `z.infer`.
+- Strict tool schemas reject `.optional()`. Use a required field, `.nullable()`, or an enum like `z.enum(["all", "completed", "pending"])`.
+- `z.enum()` needs a non-empty tuple: `Object.keys(X) as [Key, ...Key[]]`.
+
+## Tools
+- Add `errorFunction` so the model sees the real error instead of a generic "An error occurred":
+
+```ts
+errorFunction: (_context, error) =>
+  `Error: ${error instanceof Error ? error.message : String(error)}`,
+```
+
+- Do arithmetic, money and dates in code (`service.ts`), never in the model.
+
+## Run context
+- Pass app data with `run(agent, input, { context })`. It is never sent to the model.
+- Type it on the tool: `async execute(args, runContext?: RunContext<UserContext>)`, and read it via a `requireUser(runContext)` helper.
+- Tools must never accept a user or customer id from the model; read it from context and check ownership of any id the model passes.
+
+## History and chat loops
+- Keep history with `history = result.history` (it includes tool calls). Don't push assistant text by hand.
+- With an `outputType`, `finalOutput` is an object; print it with `toPrettyJson`.
+
+## Multi-agent
+- Agents as tools: `agent.asTool({ toolName, toolDescription })`. Context is passed to the nested run; only the specialist's final text returns.
+- Handoffs: continue the next turn with `result.lastAgent`. Prefix instructions with `RECOMMENDED_PROMPT_PREFIX` from `@openai/agents-core/extensions`.
+- `removeAllTools` alone breaks gpt-5 models (400 "message ... without its required reasoning item"). Use the `plainChatHistory` filter in `src/06-handoffs/agents.ts`, which also strips assistant message ids.
+- A handoff `inputFilter` removes handoff items from `newItems`, so detect transfers by comparing agents before and after the run.
+
+## Prompts
+- Tell agents the user is already logged in, so they don't ask for account numbers.
+- For destructive actions: check first, show the result, then act only on a clear "yes".

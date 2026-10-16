@@ -1,0 +1,32 @@
+---
+description: Commit and push workflow - typecheck/lint before commit, report to the developer, always confirm before push
+alwaysApply: true
+---
+
+# Commit and push workflow
+
+Follow these steps whenever the developer asks to commit (including "commit and push").
+
+## 1. Check before committing
+- Run `npm run typecheck`.
+- If `package.json` has a `lint` script, also run `npm run lint`. (None is configured yet.)
+
+## 2. Report the result to the developer
+- **Errors found**: do NOT commit. List each error as `file:line - message`, then ask with the AskQuestion tool:
+  - "Fix the errors first (Recommended)"
+  - "Commit anyway"
+  - "Cancel"
+- **No errors**: say "Typecheck passed (no lint configured)" and continue.
+
+## 3. Commit
+- Run `git status --short` and confirm `.env` and `node_modules` are not listed.
+- Stage only the files related to the request; mention any other changed files instead of committing them silently.
+- Use a short, descriptive message, e.g. `Lesson 07: input guardrails`.
+- Report the commit hash and message.
+
+## 4. Push (always ask)
+- After a successful commit, ALWAYS ask with the AskQuestion tool before pushing, even if the developer said "commit and push":
+  - "Push to origin/<branch>"
+  - "Don't push yet"
+- Push only after the developer confirms. Never force-push.
+- After pushing, confirm the local branch matches `origin/<branch>`.

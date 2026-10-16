@@ -1,0 +1,32 @@
+---
+description: Folder layout and conventions for reusable tools in src/tools
+globs: src/tools/**/*.ts
+alwaysApply: false
+---
+
+# Tool folders (`src/tools/<domain>/`)
+
+| File | Contains |
+|---|---|
+| `tool.ts` (or `*-tools.ts`) | `tool()` definitions + zod schemas; exports a `<domain>Tools` array |
+| `service.ts` | Pure logic or API calls; knows nothing about agents |
+| `types.ts` | TS types (zod schemas when also used as `outputType`) |
+| `codes.ts` / `operations.ts` / `data.ts` | Constants or mock data |
+| `context.ts` | `requireX(runContext)` helper, when tools need run context |
+
+## Rules
+- Export new tools from `src/tools/index.ts`. Only context-free tools go into `allTools`; context-dependent ones get their own array (e.g. `userTools`).
+- Tool descriptions say what the tool does and list supported values; the model picks tools only from name, description and schema.
+- Trim outputs to the fields the model needs: lists return ids + titles, details come from a separate tool.
+- Don't send third parties' personal data (other people's emails, phone numbers) to the model.
+- Mock data keeps dates relative to "now" and builds date strings without `toISOString()` for local dates (IST shifts midnight to the previous day).
+
+```ts
+// ✅ tool reads identity from context and checks ownership
+async execute({ postId }, runContext?: RunContext<UserContext>) {
+  const user = requireUser(runContext);
+  const post = await api.getPost(postId);
+  if (post.userId !== user.id) throw new Error(`Post ${postId} does not belong to you`);
+  return { id: post.id, title: post.title, body: post.body };
+}
+```
