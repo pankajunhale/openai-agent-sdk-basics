@@ -10,7 +10,8 @@ const toErrorMessage = (_context: unknown, error: unknown) =>
 
 export const getMyProfileTool = tool({
   name: "get_my_profile",
-  description: "Get the logged-in user's profile: name, username, email, phone, website, address and company.",
+  description:
+    "Get the logged-in user's profile: name, username, email, phone, website, address and company.",
   parameters: z.object({}),
   async execute(_args, runContext?: RunContext<UserContext>) {
     const user = requireUser(runContext);
@@ -21,7 +22,8 @@ export const getMyProfileTool = tool({
 
 export const getMyPostsTool = tool({
   name: "get_my_posts",
-  description: "List the logged-in user's blog posts (id and title only). Use get_my_post for the full text.",
+  description:
+    "List the logged-in user's blog posts (id and title only). Use get_my_post for the full text.",
   parameters: z.object({}),
   async execute(_args, runContext?: RunContext<UserContext>) {
     const user = requireUser(runContext);

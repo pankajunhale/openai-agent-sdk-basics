@@ -22,7 +22,8 @@ export const getMyPlanTool = tool({
 
 export const getSpeedReportTool = tool({
   name: "get_speed_report",
-  description: "Get recent speed test results for the logged-in customer's line compared to their plan speed.",
+  description:
+    "Get recent speed test results for the logged-in customer's line compared to their plan speed.",
   parameters: z.object({}),
   async execute(_args, runContext?: RunContext<BroadbandContext>) {
     const { customerId } = requireCustomer(runContext);

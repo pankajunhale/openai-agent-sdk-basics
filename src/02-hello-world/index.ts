@@ -23,13 +23,12 @@ const helloAgent = new Agent({
   name: "Hello Agent",
   instructions: buildInstructionsByLocation(),
   model: "gpt-5-mini",
-  
 });
 const rl = readline.createInterface({
   input,
   output,
 });
-let history: AgentInputItem[] = [];
+const history: AgentInputItem[] = [];
 console.log('Chat started. Type "exit" to quit.\n');
 console.log(`System: ${buildInstructionsByLocation()}\n`);
 while (true) {

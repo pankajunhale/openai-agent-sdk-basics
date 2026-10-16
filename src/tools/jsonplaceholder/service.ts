@@ -6,14 +6,12 @@ const api = axios.create({
   timeout: 10_000,
 });
 
-export const getUser = async (id: number) =>
-  (await api.get<User>(`/users/${id}`)).data;
+export const getUser = async (id: number) => (await api.get<User>(`/users/${id}`)).data;
 
 export const getUserPosts = async (userId: number) =>
   (await api.get<Post[]>(`/users/${userId}/posts`)).data;
 
-export const getPost = async (postId: number) =>
-  (await api.get<Post>(`/posts/${postId}`)).data;
+export const getPost = async (postId: number) => (await api.get<Post>(`/posts/${postId}`)).data;
 
 export const getPostComments = async (postId: number) =>
   (await api.get<Comment[]>(`/posts/${postId}/comments`)).data;

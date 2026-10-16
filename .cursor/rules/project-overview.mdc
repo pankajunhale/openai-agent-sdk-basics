@@ -8,7 +8,7 @@ alwaysApply: true
 A TypeScript learning project following Piyush Garg's 15-video OpenAI Agents SDK series. One folder per video in `src/NN-topic/`; the README "Learning topics" table tracks status.
 
 ## Stack
-- Node 22, ESM (`"type": "module"`), TypeScript 7 strict, run with `tsx` (no build step)
+- Node 22, ESM (`"type": "module"`), TypeScript 6 strict (pinned `~6.0.3`; typescript-eslint doesn't support TS 7 yet), run with `tsx` (no build step)
 - `@openai/agents` 0.20, `@openai/agents-core` 0.20 (only for `/extensions`), `zod` 4, `axios`, `dotenv`
 - Default model: `gpt-5-mini`
 
@@ -24,7 +24,7 @@ A TypeScript learning project following Piyush Garg's 15-video OpenAI Agents SDK
 - Every lesson file starts with `import "dotenv/config";`
 
 ## Commands
-- `npm start src/NN-topic/index.ts` runs a lesson; `npm run typecheck` must pass after every change
+- `npm start src/NN-topic/index.ts` runs a lesson; `npm run check` (typecheck + lint + format check) must pass after every change; `npm run lint:fix` and `npm run format` auto-fix
 - Chat lessons read stdin, so test them with a temporary `_try.ts` script that runs fixed questions, then delete it. Don't pipe input into the chat loop.
 
 ## Safety

@@ -46,11 +46,13 @@ You are SpeedNet customer support, speaking with ${runContext.context.name}. You
   tools: [
     customerAgent.asTool({
       toolName: "customer_team",
-      toolDescription: "Ask the customer team about the customer's plan, service status and speed test results.",
+      toolDescription:
+        "Ask the customer team about the customer's plan, service status and speed test results.",
     }),
     accountAgent.asTool({
       toolName: "account_team",
-      toolDescription: "Ask the accounts team to check refund eligibility, cancel the service or issue a refund.",
+      toolDescription:
+        "Ask the accounts team to check refund eligibility, cancel the service or issue a refund.",
     }),
   ],
 });

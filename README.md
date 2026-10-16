@@ -49,29 +49,32 @@ On Windows, create `.env` in your editor rather than with `echo > .env`; PowerSh
 npm start src/03-tool-calling/index.ts      # run once
 npm run dev src/03-tool-calling/index.ts    # re-run on save (not for chat lessons)
 npm run typecheck                           # type-check the whole project
+npm run lint                                # ESLint (lint:fix to auto-fix)
+npm run format                              # Prettier (format:check to only check)
+npm run check                               # typecheck + lint + format check
 ```
 
 Most lessons are interactive chats: type a message, and type `exit` to quit.
 
 ## Learning topics
 
-| # | Lesson | Folder | Status |
-|---|---|---|---|
-| 1 | Introduction | (no code) | ✅ |
-| 2 | Hello World agent | `src/02-hello-world` | ✅ |
-| 3 | Tool calling | `src/03-tool-calling` | ✅ |
-| 4 | Structured outputs with Zod | `src/04-structured-outputs` | ✅ |
-| 5 | Multi-agent: agents as tools | `src/05-agents-as-tools` | ✅ |
-| 6 | Agent handoffs | `src/06-handoffs` | ✅ |
-| 7 | Input guardrails | `src/07-input-guardrails` | ⏳ |
-| 8 | Output guardrails | `src/08-output-guardrails` | ⏳ |
-| 9 | Phase 1 checkpoint | `src/09-checkpoint-phase-1` | ⏳ |
-| 10 | Conversation and chat threads | `src/10-chat-threads` | ⏳ |
-| 11 | Server conversations | `src/11-server-conversations` | ⏳ |
-| 12 | Runtime local context | `src/12-local-context` | ✅ |
-| 13 | Streaming responses | `src/13-streaming` | ⏳ |
-| 14 | Human in the loop | `src/14-human-in-loop` | ⏳ |
-| 15 | MCP (Model Context Protocol) | `src/15-mcp` | ⏳ |
+| #   | Lesson                        | Folder                        | Status |
+| --- | ----------------------------- | ----------------------------- | ------ |
+| 1   | Introduction                  | (no code)                     | ✅     |
+| 2   | Hello World agent             | `src/02-hello-world`          | ✅     |
+| 3   | Tool calling                  | `src/03-tool-calling`         | ✅     |
+| 4   | Structured outputs with Zod   | `src/04-structured-outputs`   | ✅     |
+| 5   | Multi-agent: agents as tools  | `src/05-agents-as-tools`      | ✅     |
+| 6   | Agent handoffs                | `src/06-handoffs`             | ✅     |
+| 7   | Input guardrails              | `src/07-input-guardrails`     | ⏳     |
+| 8   | Output guardrails             | `src/08-output-guardrails`    | ⏳     |
+| 9   | Phase 1 checkpoint            | `src/09-checkpoint-phase-1`   | ⏳     |
+| 10  | Conversation and chat threads | `src/10-chat-threads`         | ⏳     |
+| 11  | Server conversations          | `src/11-server-conversations` | ⏳     |
+| 12  | Runtime local context         | `src/12-local-context`        | ✅     |
+| 13  | Streaming responses           | `src/13-streaming`            | ⏳     |
+| 14  | Human in the loop             | `src/14-human-in-loop`        | ⏳     |
+| 15  | MCP (Model Context Protocol)  | `src/15-mcp`                  | ⏳     |
 
 ### 2. Hello World agent
 
@@ -121,7 +124,7 @@ const assistantAgent = new Agent({
 
 Things to notice:
 
-- **A schema, not an interface.** Passing a TypeScript `interface` fails with *"only refers to a type, but is being used as a value"*, because interfaces disappear at runtime. The SDK needs a real Zod schema to turn into JSON Schema for the model and to validate the reply.
+- **A schema, not an interface.** Passing a TypeScript `interface` fails with _"only refers to a type, but is being used as a value"_, because interfaces disappear at runtime. The SDK needs a real Zod schema to turn into JSON Schema for the model and to validate the reply.
 - **One definition for both.** `src/tools/weather/types.ts` defines `CurrentWeatherSchema` once and derives the type with `z.infer<typeof CurrentWeatherSchema>`, so the tool's service and the agent's output always agree.
 - **`finalOutput` is now an object**, so it's printed as formatted JSON; a template string would show `[object Object]`.
 - **Every answer must fit the schema.** With a weather `outputType`, even "What is 18% of 4500?" has to be returned as a weather object, so structured outputs suit single-purpose agents, not general assistants.
@@ -130,10 +133,10 @@ Things to notice:
 
 Both lessons use the same scenario: **a broadband customer with slow internet who wants to cancel and get a refund**. There are two specialists, a **Customer Agent** (plan and speed checks) and an **Account Agent** (refund eligibility, cancellation, refund), sharing the mock tools in `src/tools/broadband`.
 
-| Pattern | Use it when | What happens |
-|---|---|---|
+| Pattern                        | Use it when                                                                   | What happens                                                                                                                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Agents as tools** (lesson 5) | A manager should stay in control and call specialists as bounded capabilities | A **Support Manager** calls the specialists via `agent.asTool()` and writes every reply itself, like a support person who puts you on hold and checks with the refunds team |
-| **Handoffs** (lesson 6) | A specialist should take over the conversation | The Customer Agent **transfers** you to the Account Agent, who then talks to you directly, like being routed to the refunds department |
+| **Handoffs** (lesson 6)        | A specialist should take over the conversation                                | The Customer Agent **transfers** you to the Account Agent, who then talks to you directly, like being routed to the refunds department                                      |
 
 Lessons learned while building these:
 
@@ -195,18 +198,19 @@ src/
 
 Each tool folder follows the same layout:
 
-| File | Purpose |
-|---|---|
-| `tool.ts` | `tool()` definition and Zod schema, which is what the model sees |
-| `service.ts` | The actual logic or API call, which knows nothing about agents |
-| `types.ts` | TypeScript types |
-| `codes.ts` / `operations.ts` / `data.ts` | Constants or mock data |
+| File                                     | Purpose                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| `tool.ts`                                | `tool()` definition and Zod schema, which is what the model sees |
+| `service.ts`                             | The actual logic or API call, which knows nothing about agents   |
+| `types.ts`                               | TypeScript types                                                 |
+| `codes.ts` / `operations.ts` / `data.ts` | Constants or mock data                                           |
 
 ## Tech stack
 
 - [`@openai/agents`](https://www.npmjs.com/package/@openai/agents) 0.20, the OpenAI Agents SDK
 - [`zod`](https://zod.dev) 4 for tool and output schemas
-- TypeScript 7, run directly with [`tsx`](https://github.com/privatenumber/tsx)
+- TypeScript 6, run directly with [`tsx`](https://github.com/privatenumber/tsx)
+- ESLint 9 + [`typescript-eslint`](https://typescript-eslint.io) for linting, Prettier for formatting
 - `axios` for HTTP calls and `dotenv` for the API key
 
 ## References

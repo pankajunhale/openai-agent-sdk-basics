@@ -10,7 +10,7 @@ description: Adds a new tool domain under src/tools (tool.ts, service.ts, types.
 ```
 - [ ] 1. Create src/tools/<domain>/ with types.ts, service.ts, tool.ts (+ codes.ts/data.ts, context.ts)
 - [ ] 2. Export the tools array from src/tools/index.ts
-- [ ] 3. npm run typecheck
+- [ ] 3. npm run check
 - [ ] 4. Smoke-test service.ts directly (no LLM) with a temporary _try.ts, then delete it
 ```
 

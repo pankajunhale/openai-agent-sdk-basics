@@ -16,7 +16,7 @@ const rl = readline.createInterface({
 });
 let history: AgentInputItem[] = [];
 // after a handoff, the next turn must continue with the agent the customer was transferred to
-let currentAgent: Agent<BroadbandContext, any> = customerAgent;
+let currentAgent: Agent<BroadbandContext> = customerAgent;
 console.log(`SpeedNet support (handoffs) - logged in as ${currentCustomer.name}`);
 console.log('Type "exit" to quit.\n');
 

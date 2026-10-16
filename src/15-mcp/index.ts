@@ -1,8 +1,2 @@
-import 'dotenv/config';
-import {
-  Agent,
-  run,
-  hostedMcpTool,
-  MCPServerStdio,
-  MCPServerStreamableHttp,
-} from '@openai/agents';
+import "dotenv/config";
+import { Agent, run, hostedMcpTool, MCPServerStdio, MCPServerStreamableHttp } from "@openai/agents";

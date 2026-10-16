@@ -11,7 +11,7 @@ description: Builds or completes a lesson folder (src/NN-topic) in the OpenAI Ag
 - [ ] 1. Plan: read the lesson's index.ts (it has starter imports) and pick a scenario
 - [ ] 2. Reuse or add tools in src/tools (see the adding-agent-tool skill)
 - [ ] 3. Write the agent(s) and chat loop
-- [ ] 4. npm run typecheck
+- [ ] 4. npm run check
 - [ ] 5. Verify with a temporary _try.ts script, then delete it
 - [ ] 6. Update the README "Learning topics" table and section
 ```
@@ -77,6 +77,7 @@ console.log("Bye!");
 ```
 
 Variations:
+
 - Run context: `new Agent<Ctx>(...)` and `run(agent, history, { context })`
 - Handoffs: keep `let currentAgent`, then `currentAgent = result.lastAgent ?? currentAgent`
 - `outputType`: print with `toPrettyJson(result.finalOutput)`

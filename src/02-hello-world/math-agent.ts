@@ -22,7 +22,7 @@ const mathAgent = new Agent({
   model: "gpt-5-mini",
 });
 const rl = readline.createInterface({ input, output });
-let history: AgentInputItem[] = [];
+const history: AgentInputItem[] = [];
 console.log("Math chat started. Type exit to  quit. \n");
 rl.setPrompt("User:");
 rl.prompt();

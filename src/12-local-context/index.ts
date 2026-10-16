@@ -73,21 +73,11 @@ for await (const line of rl) {
   const result = await run(accountAgent, history, { context: currentUser });
 
   for (const item of result.newItems) {
-    if (
-      item.type === "tool_call_item" &&
-      item.rawItem.type === "function_call"
-    ) {
-      console.log(
-        `[tool input] ${item.rawItem.name}\n${toPrettyJson(item.rawItem.arguments)}`,
-      );
+    if (item.type === "tool_call_item" && item.rawItem.type === "function_call") {
+      console.log(`[tool input] ${item.rawItem.name}\n${toPrettyJson(item.rawItem.arguments)}`);
     }
-    if (
-      item.type === "tool_call_output_item" &&
-      item.rawItem.type === "function_call_result"
-    ) {
-      console.log(
-        `[tool output] ${item.rawItem.name}\n${toPrettyJson(item.output)}`,
-      );
+    if (item.type === "tool_call_output_item" && item.rawItem.type === "function_call_result") {
+      console.log(`[tool output] ${item.rawItem.name}\n${toPrettyJson(item.output)}`);
     }
   }
 
