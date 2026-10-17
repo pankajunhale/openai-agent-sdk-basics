@@ -27,6 +27,7 @@ errorFunction: (_context, error) =>
 - Tools must never accept a user or customer id from the model; read it from context and check ownership of any id the model passes.
 
 ## History and chat loops
+- Lessons use `runChatLoop` from `src/shared/chat-loop.ts`; change behaviour there (or via its options) instead of copying the loop.
 - Keep history with `history = result.history` (it includes tool calls). Don't push assistant text by hand.
 - With an `outputType`, `finalOutput` is an object; print it with `toPrettyJson`.
 

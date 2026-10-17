@@ -1,14 +1,13 @@
 import { Agent } from "@openai/agents";
-import { DEFAULT_MODEL } from "../constants/index.js";
-import type { UserContext } from "../core/index.js";
-import { buildGeneralAssistantInstructions } from "../instructions/index.js";
-import { allTools } from "../tools/index.js";
-import { CurrentWeatherSchema } from "../tools/weather/types.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
+import { buildGeneralAssistantInstructions } from "#instructions";
+import { allTools, WeatherAnswerSchema } from "#tools";
 
-export const assistantAgent = new Agent<UserContext, typeof CurrentWeatherSchema>({
+export const assistantAgent = new Agent<UserContext, typeof WeatherAnswerSchema>({
   name: "General Assistant",
   instructions: buildGeneralAssistantInstructions,
   model: DEFAULT_MODEL,
   tools: allTools,
-  outputType: CurrentWeatherSchema, // structured output
+  outputType: WeatherAnswerSchema, // structured output
 });

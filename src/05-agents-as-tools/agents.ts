@@ -1,12 +1,12 @@
 import { Agent } from "@openai/agents";
-import { DEFAULT_MODEL } from "../constants/index.js";
-import type { UserContext } from "../core/index.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
 import {
   buildAccountTeamInstructions,
   buildCustomerTeamInstructions,
   buildSupportManagerInstructions,
-} from "../instructions/index.js";
-import { accountTools, customerTools } from "../tools/broadband/index.js";
+} from "#instructions";
+import { accountTools, customerTools } from "#tools";
 
 export const customerAgent = new Agent<UserContext>({
   name: "Customer Agent",

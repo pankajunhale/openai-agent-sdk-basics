@@ -14,5 +14,14 @@ export const CurrentWeatherSchema = z.object({
   observedAt: z.string(),
 });
 
+// agent output: weather is null when the tool wasn't called or failed, so the model never invents a reading
+export const WeatherAnswerSchema = z.object({
+  weather: CurrentWeatherSchema.nullable().describe(
+    "Copied exactly from the get_weather tool output, or null if the tool was not called or failed.",
+  ),
+  message: z.string().describe("Short reply to the user, e.g. why there is no weather."),
+});
+
 export type WeatherCondition = z.infer<typeof WeatherConditionSchema>;
 export type CurrentWeather = z.infer<typeof CurrentWeatherSchema>;
+export type WeatherAnswer = z.infer<typeof WeatherAnswerSchema>;

@@ -1,8 +1,8 @@
 import { Agent, run } from "@openai/agents";
 import type { OutputGuardrail } from "@openai/agents";
-import { DEFAULT_MODEL } from "../../../constants/index.js";
-import type { UserContext } from "../../../core/index.js";
-import { buildSqlClassifierInstructions } from "../../../instructions/index.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
+import { buildSqlClassifierInstructions } from "#instructions";
 import { SqlCheckSchema } from "./types.js";
 import type { SqlAnswerSchema } from "./types.js";
 
@@ -19,7 +19,7 @@ export const readQueryGuardrail: OutputGuardrail<typeof SqlAnswerSchema, UserCon
   execute: async ({ agentOutput, context }) => {
     const result = await run(guardrailAgent, agentOutput.response, { context });
     return {
-      outputInfo: result.finalOutput?.query,
+      outputInfo: result.finalOutput,
       tripwireTriggered: !result.finalOutput?.isSafe,
     };
   },

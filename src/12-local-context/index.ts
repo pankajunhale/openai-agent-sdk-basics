@@ -1,45 +1,14 @@
 import "dotenv/config";
-import { run } from "@openai/agents";
-import type { AgentInputItem } from "@openai/agents";
-import * as readline from "readline";
-import { stdin as input, stdout as output } from "node:process";
-import { userTools } from "../tools/index.js";
-import { logRunItems } from "../shared/log.js";
-import { DEMO_USER as currentUser } from "../core/index.js";
+import { DEMO_USER } from "#core";
+import { runChatLoop } from "#shared/chat-loop";
+import { userTools } from "#tools";
 import { accountAgent } from "./agents.js";
 
-const rl = readline.createInterface({
-  input,
-  output,
+// the context (logged-in user) is passed to every run but never sent to the model
+await runChatLoop(accountAgent, {
+  context: DEMO_USER,
+  intro: [
+    `Logged in as ${DEMO_USER.name} (id ${DEMO_USER.id})`,
+    `Tools: ${userTools.map((t) => t.name).join(", ")}`,
+  ],
 });
-let history: AgentInputItem[] = [];
-console.log(`Logged in as ${currentUser.name} (id ${currentUser.id})`);
-console.log(`Tools: ${userTools.map((t) => t.name).join(", ")}`);
-console.log('Chat started. Type "exit" to quit.\n');
-
-rl.setPrompt("User: ");
-rl.prompt();
-
-// for-await ends the loop (and closes readline) on "exit", Ctrl+C or end of input
-for await (const line of rl) {
-  const userInput = line.trim();
-  if (userInput.toLowerCase() === "exit") {
-    rl.close();
-    console.log("Chat ended.");
-    break;
-  }
-  if (!userInput) {
-    rl.prompt();
-    continue;
-  }
-
-  history.push({ role: "user", content: userInput });
-  const result = await run(accountAgent, history, { context: currentUser });
-
-  logRunItems(result.newItems);
-
-  console.log(`Assistant: ${result.finalOutput}\n`);
-  history = result.history;
-  rl.prompt();
-}
-console.log("Bye!");

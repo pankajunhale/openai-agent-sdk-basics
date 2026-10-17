@@ -1,8 +1,8 @@
 import { Agent } from "@openai/agents";
 import type { InputGuardrail } from "@openai/agents";
-import { DEFAULT_MODEL } from "../../../constants/index.js";
-import type { UserContext } from "../../../core/index.js";
-import { buildMathClassifierInstructions } from "../../../instructions/index.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
+import { buildMathClassifierInstructions } from "#instructions";
 import { classifyLatestUserMessage } from "../../shared/classify.js";
 import { MathCheckSchema } from "./types.js";
 

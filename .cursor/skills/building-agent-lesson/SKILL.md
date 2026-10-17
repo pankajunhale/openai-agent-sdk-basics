@@ -20,7 +20,7 @@ description: Builds or completes a lesson folder (src/NN-topic) in the OpenAI Ag
 
 **3. Write.** Start from the templates below. Put each prompt in its own `src/instructions/<agent>.ts` as a `build<Agent>Instructions: InstructionsBuilder` function of the run context, and export it from `src/instructions/index.ts`. Type the agent with its context and pass `{ context: DEMO_USER }` to every run. Use `DEFAULT_MODEL` from `src/constants` and demo logins from `src/core`.
 
-**5. Verify.** Chat loops read stdin, so piping input fails. Write `src/NN-topic/_try.ts` that imports the agent, runs 3–5 fixed questions (including a failure case, e.g. unsupported input or another user's data), prints `logRunItems(result.newItems)` and `finalOutput`, then run `npx tsx src/NN-topic/_try.ts`. Fix any prompt or code issues, rerun, then delete `_try.ts`.
+**5. Verify.** Chat loops read stdin, so piping input fails. Write `src/NN-topic/_try.ts` that runs 3–5 fixed questions (including a failure case, e.g. unsupported input or another user's data) through the real loop: `await runChatLoop(agent, { context: DEMO_USER, input: Readable.from(["q1\n", "q2\n"]) })` (import `Readable` from `node:stream`). Then run `npx tsx src/NN-topic/_try.ts`. Fix any prompt or code issues, rerun, then delete `_try.ts`.
 
 **6. README.** Change the lesson's status to ✅ and describe what was built and what was learned (pitfalls included).
 
@@ -41,10 +41,10 @@ Rules:
 ```ts
 // src/NN-topic/agents.ts
 import { Agent } from "@openai/agents";
-import { DEFAULT_MODEL } from "../constants/index.js";
-import type { UserContext } from "../core/index.js";
-import { buildLessonAgentInstructions } from "../instructions/index.js";
-import { allTools } from "../tools/index.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
+import { buildLessonAgentInstructions } from "#instructions";
+import { allTools } from "#tools";
 
 export const agent = new Agent<UserContext>({
   name: "Lesson Agent",
@@ -57,43 +57,16 @@ export const agent = new Agent<UserContext>({
 ```ts
 // src/NN-topic/index.ts
 import "dotenv/config";
-import { run } from "@openai/agents";
-import type { AgentInputItem } from "@openai/agents";
-import * as readline from "readline";
-import { stdin as input, stdout as output } from "node:process";
-import { DEMO_USER as currentUser } from "../core/index.js";
-import { logRunItems } from "../shared/log.js";
+import { DEMO_USER } from "#core";
+import { runChatLoop } from "#shared/chat-loop";
 import { agent } from "./agents.js";
 
-const rl = readline.createInterface({ input, output });
-let history: AgentInputItem[] = [];
-console.log('Chat started. Type "exit" to quit.\n');
-
-rl.setPrompt("User: ");
-rl.prompt();
-
-// for-await ends the loop (and closes readline) on "exit", Ctrl+C or end of input
-for await (const line of rl) {
-  const userInput = line.trim();
-  if (userInput.toLowerCase() === "exit") break;
-  if (!userInput) {
-    rl.prompt();
-    continue;
-  }
-
-  history.push({ role: "user", content: userInput });
-  const result = await run(agent, history, { context: currentUser });
-
-  logRunItems(result.newItems);
-  console.log(`Assistant: ${result.finalOutput}\n`);
-  history = result.history;
-  rl.prompt();
-}
-console.log("Bye!");
+await runChatLoop(agent, { context: DEMO_USER, intro: ["Lesson agent started."] });
 ```
+
+`runChatLoop` already keeps `result.history`, logs tool calls and handoffs, continues with `result.lastAgent` after a handoff, and catches input/output guardrail tripwires (shows the `outputInfo.reason`, drops the blocked message).
 
 Variations:
 
-- Broadband lessons: same `UserContext`, but run with `{ context: DEMO_CUSTOMER }` (a user with a `broadband` account)
-- Handoffs: keep `let currentAgent`, then `currentAgent = result.lastAgent ?? currentAgent`
-- `outputType`: print with `toPrettyJson(result.finalOutput)`
+- Broadband lessons: same `UserContext`, but pass `{ context: DEMO_CUSTOMER }` (a user with a `broadband` account)
+- `outputType`: objects print as JSON by default; pass `formatOutput: (o) => Schema.parse(o).field` to print one field

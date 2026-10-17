@@ -108,17 +108,22 @@ The lesson's general assistant has a mock **weather** tool and a **calculator** 
 
 ### 4. Structured outputs with Zod
 
-Instead of free text, the agent returns a **typed object** that matches a Zod schema, so your code can use `result.finalOutput.temperatureC` directly instead of parsing a sentence.
+Instead of free text, the agent returns a **typed object** that matches a Zod schema, so your code can use `result.finalOutput.weather?.temperatureC` directly instead of parsing a sentence.
 
-The lesson reuses the weather + calculator assistant and sets `outputType` to the weather schema:
+The lesson reuses the weather + calculator assistant and sets `outputType` to an answer schema that wraps the weather schema:
 
 ```ts
-const assistantAgent = new Agent({
+const WeatherAnswerSchema = z.object({
+  weather: CurrentWeatherSchema.nullable(), // null when there's no tool result
+  message: z.string(),
+});
+
+const assistantAgent = new Agent<UserContext, typeof WeatherAnswerSchema>({
   name: "General Assistant",
-  instructions: ASSISTANT_INSTRUCTIONS,
-  model: "gpt-5-mini",
+  instructions: buildGeneralAssistantInstructions,
+  model: DEFAULT_MODEL,
   tools: allTools,
-  outputType: CurrentWeatherSchema,
+  outputType: WeatherAnswerSchema,
 });
 ```
 
@@ -127,7 +132,7 @@ Things to notice:
 - **A schema, not an interface.** Passing a TypeScript `interface` fails with _"only refers to a type, but is being used as a value"_, because interfaces disappear at runtime. The SDK needs a real Zod schema to turn into JSON Schema for the model and to validate the reply.
 - **One definition for both.** `src/tools/weather/types.ts` defines `CurrentWeatherSchema` once and derives the type with `z.infer<typeof CurrentWeatherSchema>`, so the tool's service and the agent's output always agree.
 - **`finalOutput` is now an object**, so it's printed as formatted JSON; a template string would show `[object Object]`.
-- **Every answer must fit the schema.** With a weather `outputType`, even "What is 18% of 4500?" has to be returned as a weather object, so structured outputs suit single-purpose agents, not general assistants.
+- **Every answer must fit the schema.** The first version used `CurrentWeatherSchema` directly as the `outputType`. Asked about Delhi (not supported), the agent skipped the tool and invented a Mumbai reading with all zeros, because the schema had no way to say "no weather". A nullable `weather` plus a `message` lets it decline honestly, and non-weather answers like "12 × 12" fit too.
 
 ### 5 & 6. Multi-agent: agents as tools vs handoffs
 
@@ -163,7 +168,7 @@ export const mathInputGuardrail: InputGuardrail = {
 const mathAgent = new Agent({ name: "Math Agent", ..., inputGuardrails: [mathInputGuardrail] });
 ```
 
-The chat loop catches `InputGuardrailTripwireTriggered`, shows the classifier's reason and removes the blocked message from the history.
+The shared chat loop (`runChatLoop`) catches `InputGuardrailTripwireTriggered`, shows the classifier's reason and removes the blocked message from the history.
 
 Guardrails live in `src/guardrails/`, split by where they attach:
 
@@ -249,6 +254,7 @@ src/
 │   ├── run/                    # Runner-level (planned: PII)
 │   └── tool/                   # tool arguments (planned: refund amount)
 └── shared/
+    ├── chat-loop.ts            # runChatLoop: the chat loop every lesson uses
     └── log.ts                  # pretty logging of tool calls and handoffs
 ```
 
@@ -262,8 +268,13 @@ Every lesson is built the same way:
   ```
 
 - The agent lives in the lesson's `agents.ts` (`new Agent<UserContext>({ ..., model: DEFAULT_MODEL })`).
-- `index.ts` only runs the chat loop, and every run passes the logged-in user: `run(agent, history, { context: DEMO_USER })`.
-- Each folder exports through its `index.ts`.
+- `index.ts` is one call to the shared chat loop, which passes the logged-in user to every run:
+
+  ```ts
+  await runChatLoop(assistantAgent, { context: DEMO_USER, intro: ["Tools: ..."] });
+  ```
+
+- Each folder exports through its `index.ts`, and other folders import it with a short alias from `package.json` `"imports"`: `#constants`, `#core`, `#guardrails`, `#instructions`, `#tools`, `#shared/<file>`.
 
 Each tool folder follows the same layout:
 

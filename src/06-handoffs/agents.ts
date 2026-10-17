@@ -1,13 +1,10 @@
 import { Agent, handoff } from "@openai/agents";
 import type { HandoffInputData } from "@openai/agents";
 import { removeAllTools } from "@openai/agents-core/extensions";
-import { DEFAULT_MODEL } from "../constants/index.js";
-import type { UserContext } from "../core/index.js";
-import {
-  buildAccountAgentInstructions,
-  buildCustomerAgentInstructions,
-} from "../instructions/index.js";
-import { accountTools, customerTools } from "../tools/broadband/index.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
+import { buildAccountAgentInstructions, buildCustomerAgentInstructions } from "#instructions";
+import { accountTools, customerTools } from "#tools";
 
 // Gives the next agent a plain chat (user + assistant text only). removeAllTools drops
 // reasoning items, but gpt-5 models reject assistant messages whose id points at a

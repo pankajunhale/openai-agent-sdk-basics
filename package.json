@@ -16,6 +16,14 @@
   "license": "ISC",
   "description": "",
   "type": "module",
+  "imports": {
+    "#constants": "./src/constants/index.ts",
+    "#core": "./src/core/index.ts",
+    "#guardrails": "./src/guardrails/index.ts",
+    "#instructions": "./src/instructions/index.ts",
+    "#shared/*": "./src/shared/*.ts",
+    "#tools": "./src/tools/index.ts"
+  },
   "dependencies": {
     "@openai/agents": "^0.20.0",
     "@openai/agents-core": "^0.20.0",

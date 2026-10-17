@@ -1,8 +1,8 @@
 import { tool } from "@openai/agents";
 import type { RunContext } from "@openai/agents";
 import { z } from "zod";
-import { requireCustomer } from "../../core/index.js";
-import type { UserContext } from "../../core/index.js";
+import { requireCustomer } from "#core";
+import type { UserContext } from "#core";
 import * as svc from "./service.js";
 
 const toErrorMessage = (_context: unknown, error: unknown) =>

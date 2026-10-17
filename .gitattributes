@@ -1,0 +1,5 @@
+# keep LF everywhere (overrides core.autocrlf on Windows) so Prettier's format check passes after checkout
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary

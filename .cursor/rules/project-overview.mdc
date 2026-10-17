@@ -15,25 +15,27 @@ A TypeScript learning project following Piyush Garg's 15-video OpenAI Agents SDK
 ## Layout
 Every folder exports through its `index.ts`; import from there.
 - `src/NN-topic/agents.ts`: the lesson's agents (`new Agent({ name, instructions, model: DEFAULT_MODEL, ... })`)
-- `src/NN-topic/index.ts`: entry point with the chat loop only
+- `src/NN-topic/index.ts`: entry point, one call: `await runChatLoop(agent, { context: DEMO_USER, intro })`
 - `src/instructions/<agent>.ts`: one file per agent prompt (classifier prompts too). Every prompt is a function `export const build<Agent>Instructions: InstructionsBuilder = (runContext) => ...` (name the param `_runContext` if unused)
 - One run context across the app: `UserContext` (`id`, `email`, `name`, optional `broadband: { customerId }`). Don't add new context types; add an optional property instead
 - Agents are typed with their context (`new Agent<UserContext>(...)`) and every run passes it: `run(agent, history, { context: DEMO_USER })`
-- `src/constants/`: app-wide constants (`DEFAULT_MODEL`)
+- `src/constants/`: app-wide constants (`DEFAULT_MODEL`, `USER_LOCATION`)
 - `src/core/`: global auth and context: `UserContext`, `requireUser`/`requireCustomer` (throws if the user has no broadband account), demo logins (`DEMO_USER`, `DEMO_CUSTOMER`)
 - `src/tools/<domain>/`: reusable tools, exported from `src/tools/index.ts`
 - `src/guardrails/<entry|run|tool>/<domain>/`: guardrails, exported from `src/guardrails/index.ts`
+- `src/shared/chat-loop.ts`: `runChatLoop` (readline loop, history, handoffs via `result.lastAgent`, guardrail tripwires, `input` option for `_try` scripts)
 - `src/shared/log.ts`: `toPrettyJson` and `logRunItems` for tool and handoff logging
 
 ## Code style
 - Double quotes, 2-space indent
-- Relative imports end in `.js`, even for `.ts` files (NodeNext): `import { allTools } from "../tools/index.js";`
+- Imports across top-level folders use the `package.json` `"imports"` aliases: `#constants`, `#core`, `#guardrails`, `#instructions`, `#tools`, `#shared/<file>`. Export anything other folders need from the folder's `index.ts` rather than adding new aliases
+- Imports within a folder stay relative and end in `.js`, even for `.ts` files (NodeNext): `import { getWeather } from "./service.js";`
 - Use `import type` for type-only imports
 - Every lesson file starts with `import "dotenv/config";`
 
 ## Commands
 - `npm start src/NN-topic/index.ts` runs a lesson; `npm run check` (typecheck + lint + format check) must pass after every change; `npm run lint:fix` and `npm run format` auto-fix
-- Chat lessons read stdin, so test them with a temporary `_try.ts` script that runs fixed questions, then delete it. Don't pipe input into the chat loop.
+- Chat lessons read stdin, so test them with a temporary `_try.ts` script, then delete it: either `run()` the lesson's agents directly, or call `runChatLoop(agent, { context, input: Readable.from(["question\n", ...]) })`. Don't pipe input into the chat loop from the shell.
 
 ## Safety
 - Never read, print or commit `.env`; `.env.example` holds only a placeholder

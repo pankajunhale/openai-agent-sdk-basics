@@ -1,8 +1,8 @@
 import { Agent } from "@openai/agents";
-import { DEFAULT_MODEL } from "../constants/index.js";
-import type { UserContext } from "../core/index.js";
-import { readQueryGuardrail, SqlAnswerSchema } from "../guardrails/index.js";
-import { buildSqlBuilderInstructions } from "../instructions/index.js";
+import { DEFAULT_MODEL } from "#constants";
+import type { UserContext } from "#core";
+import { readQueryGuardrail, SqlAnswerSchema } from "#guardrails";
+import { buildSqlBuilderInstructions } from "#instructions";
 
 // i am creating sql query builder agent, it will take a natural language query and return a sql query.
 export const mainAgent = new Agent<UserContext, typeof SqlAnswerSchema>({

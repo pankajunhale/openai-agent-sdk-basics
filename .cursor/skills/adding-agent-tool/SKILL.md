@@ -26,8 +26,8 @@ description: Adds a new tool domain under src/tools (tool.ts, service.ts, types.
 import { tool } from "@openai/agents";
 import type { RunContext } from "@openai/agents";
 import { z } from "zod";
-import { requireUser } from "../../core/index.js";
-import type { UserContext } from "../../core/index.js";
+import { requireUser } from "#core";
+import type { UserContext } from "#core";
 import * as svc from "./service.js";
 
 const toErrorMessage = (_context: unknown, error: unknown) =>
