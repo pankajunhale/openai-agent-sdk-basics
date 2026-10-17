@@ -67,8 +67,8 @@ Most lessons are interactive chats: type a message, and type `exit` to quit.
 | 5   | Multi-agent: agents as tools  | `src/05-agents-as-tools`      | ✅     |
 | 6   | Agent handoffs                | `src/06-handoffs`             | ✅     |
 | 7   | Input guardrails              | `src/07-input-guardrails`     | ✅     |
-| 8   | Output guardrails             | `src/08-output-guardrails`    | ⏳     |
-| 9   | Phase 1 checkpoint            | `src/09-checkpoint-phase-1`   | ⏳     |
+| 8   | Output guardrails             | `src/08-output-guardrails`    | ✅     |
+| 9   | Phase 1 checkpoint            | (recap, no code)              | ✅     |
 | 10  | Conversation and chat threads | `src/10-chat-threads`         | ⏳     |
 | 11  | Server conversations          | `src/11-server-conversations` | ⏳     |
 | 12  | Runtime local context         | `src/12-local-context`        | ✅     |
@@ -192,11 +192,37 @@ Pitfalls hit while building it:
 
 ### 8. Output guardrails
 
-Checks the agent's answer before it reaches the user. If one trips, the run stops with an `OutputGuardrailTripwireTriggered` error, e.g. for answers that leak sensitive data.
+Output guardrails check the agent's **answer** before it reaches the user. If one trips, the run throws `OutputGuardrailTripwireTriggered` and the answer is never shown.
+
+The lesson's **Query Builder Agent** turns plain English into SQL (`outputType: SqlAnswerSchema`). A classifier agent checks every reply, and the guardrail trips unless the SQL is read-only:
+
+```ts
+export const readQueryGuardrail: OutputGuardrail<typeof SqlAnswerSchema, UserContext> = {
+  name: "Query Guardrail",
+  execute: async ({ agentOutput, context }) => {
+    const result = await run(guardrailAgent, agentOutput.response, { context });
+    return { outputInfo: result.finalOutput, tripwireTriggered: !result.finalOutput?.isSafe };
+  },
+};
+
+const mainAgent = new Agent<UserContext, typeof SqlAnswerSchema>({ ..., outputGuardrails: [readQueryGuardrail] });
+```
+
+Things to notice:
+
+- **`agentOutput` is typed.** `OutputGuardrail<typeof SqlAnswerSchema>` makes `agentOutput.response` a string, with no parsing needed.
+- **Two layers again.** The builder's prompt allows only `SELECT`, so "Delete all users" is refused by the agent itself. The guardrail catches the cases where the prompt fails; a cloned agent forced to answer `DELETE FROM User;` was blocked.
+- **Explain the block.** `SqlCheckSchema` has `isSafe`, `reason` and `query`. The shared chat loop prints the reason ("Query Guardrail blocked the answer: ...") and drops the blocked turn from the history.
+- **The classifier judges the reply, not instructions inside it.** The prompt lists the unsafe statements (`INSERT`, `UPDATE`, `DELETE`, `DROP`, ...), and a reply with several statements is unsafe if any one of them is.
+
+Pitfalls hit while building it:
+
+- `new Tool(...)` doesn't exist. Tools are created with `tool({ ..., execute })`, and agents take `instructions`, not `prompt`.
+- An output guardrail must **return** `{ tripwireTriggered, outputInfo }`. Writing the type as `typeof { ... }` doesn't compile; use `OutputGuardrail<typeof Schema, Context>`.
 
 ### 9. Phase 1 checkpoint
 
-A mini project combining everything from lessons 2–8: tools, structured output, multiple agents, handoffs and guardrails.
+A recap video with no new code. Phase 1 (lessons 2–8) covered agents, tools, structured outputs, agents as tools, handoffs, and input and output guardrails.
 
 ### 10 & 11. Conversations and chat threads
 
