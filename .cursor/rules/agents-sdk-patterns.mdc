@@ -23,7 +23,7 @@ errorFunction: (_context, error) =>
 
 ## Run context
 - Pass app data with `run(agent, input, { context })`. It is never sent to the model.
-- Type it on the tool: `async execute(args, runContext?: RunContext<UserContext>)`, and read it via a `requireUser(runContext)` helper.
+- Type it on the tool: `async execute(args, runContext?: RunContext<UserContext>)`, and read it via `requireUser(runContext)`. Context types, `requireX` guards and demo logins (`DEMO_USER`, `DEMO_CUSTOMER`) live in `src/core`.
 - Tools must never accept a user or customer id from the model; read it from context and check ownership of any id the model passes.
 
 ## History and chat loops

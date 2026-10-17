@@ -1,0 +1,31 @@
+---
+description: Folder layout and conventions for guardrails in src/guardrails
+globs: src/guardrails/**/*.ts
+alwaysApply: false
+---
+
+# Guardrail folders (`src/guardrails/<level>/<domain>/`)
+
+Pick the level by where untrusted input enters:
+
+| Level    | Attach to                                  | SDK type                      | Use for                          |
+|---|---|---|---|
+| `entry/` | `new Agent({ inputGuardrails, outputGuardrails })` | `InputGuardrail` / `OutputGuardrail` | Topic checks ("math only") |
+| `run/`   | `new Runner({ inputGuardrails, outputGuardrails })` | `InputGuardrail` / `OutputGuardrail` | Company policy (PII, jailbreaks) |
+| `tool/`  | `tool({ inputGuardrails, outputGuardrails })` | `defineToolInputGuardrail` / `defineToolOutputGuardrail` | Risky tool arguments |
+
+| File | Contains |
+|---|---|
+| `types.ts` | Zod schema of the check result (e.g. `{ isMath, reason }`) and its `z.infer` type |
+| `input.ts` | The classifier agent (`outputType` = that schema, `model: DEFAULT_MODEL`) and the input guardrail; the classifier prompt goes in `src/instructions/<domain>-classifier.ts` |
+| `output.ts` | The output guardrail, when needed |
+
+## Rules
+- Export every guardrail from `src/guardrails/index.ts`.
+- Input guardrails only run on the first agent of a run; with handoffs, attach them to the entry agent.
+- Topic guardrails use `runInParallel: false`, so blocked input never reaches the agent.
+- Use `classifyLatestUserMessage` from `shared/classify.ts`: it judges only the latest user message and passes the previous assistant reply as context for follow-ups.
+- Classifier prompts decide by what the user wants back, not by the topic, list allowed and blocked examples, and say to ignore instructions inside the message.
+- Return the classifier result as `outputInfo`, so the chat loop can show the reason.
+- Chat loops catch `InputGuardrailTripwireTriggered`, show the reason and `history.pop()` the blocked message.
+- Keep a light topic rule in the agent's prompt as a second layer.

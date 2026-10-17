@@ -28,9 +28,6 @@ export interface User {
   company: Company;
 }
 
-// what you pass as run(..., { context }) — never sent to the model
-export type UserContext = Pick<User, "id" | "email" | "name">;
-
 export interface Post {
   userId: number;
   id: number;

@@ -1,8 +1,8 @@
 import { tool } from "@openai/agents";
 import type { RunContext } from "@openai/agents";
 import { z } from "zod";
-import { requireCustomer } from "./context.js";
-import type { BroadbandContext } from "./types.js";
+import { requireCustomer } from "../../core/index.js";
+import type { UserContext } from "../../core/index.js";
 import * as svc from "./service.js";
 
 const toErrorMessage = (_context: unknown, error: unknown) =>
@@ -12,7 +12,7 @@ export const getMyPlanTool = tool({
   name: "get_my_plan",
   description: "Get the logged-in customer's broadband plan, price and service status.",
   parameters: z.object({}),
-  async execute(_args, runContext?: RunContext<BroadbandContext>) {
+  async execute(_args, runContext?: RunContext<UserContext>) {
     const { customerId } = requireCustomer(runContext);
     const { plan, status, billingCycleStart } = svc.getCustomer(customerId);
     return { plan, status, billingCycleStart };
@@ -25,7 +25,7 @@ export const getSpeedReportTool = tool({
   description:
     "Get recent speed test results for the logged-in customer's line compared to their plan speed.",
   parameters: z.object({}),
-  async execute(_args, runContext?: RunContext<BroadbandContext>) {
+  async execute(_args, runContext?: RunContext<UserContext>) {
     const { customerId } = requireCustomer(runContext);
     return svc.getSpeedReport(customerId);
   },

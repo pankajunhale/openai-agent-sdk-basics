@@ -1,8 +1,8 @@
 import { tool } from "@openai/agents";
 import type { RunContext } from "@openai/agents";
 import { z } from "zod";
-import { requireCustomer } from "./context.js";
-import type { BroadbandContext } from "./types.js";
+import { requireCustomer } from "../../core/index.js";
+import type { UserContext } from "../../core/index.js";
 import * as svc from "./service.js";
 
 const toErrorMessage = (_context: unknown, error: unknown) =>
@@ -13,7 +13,7 @@ export const checkRefundEligibilityTool = tool({
   description:
     "Check whether the logged-in customer qualifies for a refund, and the pro-rated amount.",
   parameters: z.object({}),
-  async execute(_args, runContext?: RunContext<BroadbandContext>) {
+  async execute(_args, runContext?: RunContext<UserContext>) {
     const { customerId } = requireCustomer(runContext);
     return svc.checkRefundEligibility(customerId);
   },
@@ -27,7 +27,7 @@ export const cancelServiceTool = tool({
   parameters: z.object({
     reason: z.string().describe("Short reason for cancellation, e.g. 'low speed'"),
   }),
-  async execute({ reason }, runContext?: RunContext<BroadbandContext>) {
+  async execute({ reason }, runContext?: RunContext<UserContext>) {
     const { customerId } = requireCustomer(runContext);
     return svc.cancelService(customerId, reason);
   },
@@ -39,7 +39,7 @@ export const issueRefundTool = tool({
   description:
     "Issue the pro-rated refund. The service must be cancelled first. The amount is calculated by the system.",
   parameters: z.object({}),
-  async execute(_args, runContext?: RunContext<BroadbandContext>) {
+  async execute(_args, runContext?: RunContext<UserContext>) {
     const { customerId } = requireCustomer(runContext);
     return svc.issueRefund(customerId);
   },

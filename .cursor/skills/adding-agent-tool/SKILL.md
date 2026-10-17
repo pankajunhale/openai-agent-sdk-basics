@@ -8,7 +8,7 @@ description: Adds a new tool domain under src/tools (tool.ts, service.ts, types.
 ## Workflow
 
 ```
-- [ ] 1. Create src/tools/<domain>/ with types.ts, service.ts, tool.ts (+ codes.ts/data.ts, context.ts)
+- [ ] 1. Create src/tools/<domain>/ with types.ts, service.ts, tool.ts (+ codes.ts/data.ts); context types and guards go in src/core
 - [ ] 2. Export the tools array from src/tools/index.ts
 - [ ] 3. npm run check
 - [ ] 4. Smoke-test service.ts directly (no LLM) with a temporary _try.ts, then delete it
@@ -17,7 +17,7 @@ description: Adds a new tool domain under src/tools (tool.ts, service.ts, types.
 ## Decisions
 
 - **Mock or real API?** Mock data goes in `data.ts` (dates relative to now). Real APIs use an `axios.create({ baseURL, timeout })` client in `service.ts`.
-- **Does it need to know the user?** If yes, add `context.ts` with a `requireX(runContext)` helper, take no id parameter from the model, and keep the tools out of `allTools`.
+- **Does it need to know the user?** If yes, add the context type, a `requireX(runContext)` guard and a demo login to `src/core`, take no id parameter from the model, and keep the tools out of `allTools`.
 - **Does it take an id from the model?** Then fetch the record and check it belongs to the context user before returning anything.
 
 ## tool.ts template
@@ -26,8 +26,8 @@ description: Adds a new tool domain under src/tools (tool.ts, service.ts, types.
 import { tool } from "@openai/agents";
 import type { RunContext } from "@openai/agents";
 import { z } from "zod";
-import { requireUser } from "./context.js";
-import type { UserContext } from "./types.js";
+import { requireUser } from "../../core/index.js";
+import type { UserContext } from "../../core/index.js";
 import * as svc from "./service.js";
 
 const toErrorMessage = (_context: unknown, error: unknown) =>

@@ -5,10 +5,7 @@ import * as readline from "readline";
 import { stdin as input, stdout as output } from "node:process";
 import { supportManager } from "./agents.js";
 import { logRunItems } from "../shared/log.js";
-import type { BroadbandContext } from "../tools/broadband/index.js";
-
-// in a real app this comes from the login session, never from the chat
-const currentCustomer: BroadbandContext = { customerId: "CUST-1001", name: "Pankaj Unhale" };
+import { DEMO_CUSTOMER as currentCustomer } from "../core/index.js";
 
 const rl = readline.createInterface({
   input,

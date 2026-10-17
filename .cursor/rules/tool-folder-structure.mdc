@@ -12,7 +12,8 @@ alwaysApply: false
 | `service.ts` | Pure logic or API calls; knows nothing about agents |
 | `types.ts` | TS types (zod schemas when also used as `outputType`) |
 | `codes.ts` / `operations.ts` / `data.ts` | Constants or mock data |
-| `context.ts` | `requireX(runContext)` helper, when tools need run context |
+
+Run-context types and `requireX(runContext)` guards live in `src/core`, not in the tool folder.
 
 ## Rules
 - Export new tools from `src/tools/index.ts`. Only context-free tools go into `allTools`; context-dependent ones get their own array (e.g. `userTools`).

@@ -10,11 +10,19 @@ A TypeScript learning project following Piyush Garg's 15-video OpenAI Agents SDK
 ## Stack
 - Node 22, ESM (`"type": "module"`), TypeScript 6 strict (pinned `~6.0.3`; typescript-eslint doesn't support TS 7 yet), run with `tsx` (no build step)
 - `@openai/agents` 0.20, `@openai/agents-core` 0.20 (only for `/extensions`), `zod` 4, `axios`, `dotenv`
-- Default model: `gpt-5-mini`
+- Default model: `DEFAULT_MODEL` (`gpt-5-mini`) from `src/constants`; never hard-code the model name
 
 ## Layout
-- `src/NN-topic/index.ts`: lesson entry point (multi-agent lessons also have `agents.ts`)
+Every folder exports through its `index.ts`; import from there.
+- `src/NN-topic/agents.ts`: the lesson's agents (`new Agent({ name, instructions, model: DEFAULT_MODEL, ... })`)
+- `src/NN-topic/index.ts`: entry point with the chat loop only
+- `src/instructions/<agent>.ts`: one file per agent prompt (classifier prompts too). Every prompt is a function `export const build<Agent>Instructions: InstructionsBuilder = (runContext) => ...` (name the param `_runContext` if unused)
+- One run context across the app: `UserContext` (`id`, `email`, `name`, optional `broadband: { customerId }`). Don't add new context types; add an optional property instead
+- Agents are typed with their context (`new Agent<UserContext>(...)`) and every run passes it: `run(agent, history, { context: DEMO_USER })`
+- `src/constants/`: app-wide constants (`DEFAULT_MODEL`)
+- `src/core/`: global auth and context: `UserContext`, `requireUser`/`requireCustomer` (throws if the user has no broadband account), demo logins (`DEMO_USER`, `DEMO_CUSTOMER`)
 - `src/tools/<domain>/`: reusable tools, exported from `src/tools/index.ts`
+- `src/guardrails/<entry|run|tool>/<domain>/`: guardrails, exported from `src/guardrails/index.ts`
 - `src/shared/log.ts`: `toPrettyJson` and `logRunItems` for tool and handoff logging
 
 ## Code style

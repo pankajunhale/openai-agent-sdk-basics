@@ -1,9 +1,3 @@
-// what you pass as run(..., { context }) — never sent to the model
-export interface BroadbandContext {
-  customerId: string;
-  name: string;
-}
-
 export interface Plan {
   name: string;
   speedMbps: number;

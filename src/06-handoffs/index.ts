@@ -5,10 +5,8 @@ import * as readline from "readline";
 import { stdin as input, stdout as output } from "node:process";
 import { customerAgent } from "./agents.js";
 import { logRunItems } from "../shared/log.js";
-import type { BroadbandContext } from "../tools/broadband/index.js";
-
-// in a real app this comes from the login session, never from the chat
-const currentCustomer: BroadbandContext = { customerId: "CUST-1001", name: "Pankaj Unhale" };
+import { DEMO_CUSTOMER as currentCustomer } from "../core/index.js";
+import type { UserContext } from "../core/index.js";
 
 const rl = readline.createInterface({
   input,
@@ -16,7 +14,7 @@ const rl = readline.createInterface({
 });
 let history: AgentInputItem[] = [];
 // after a handoff, the next turn must continue with the agent the customer was transferred to
-let currentAgent: Agent<BroadbandContext> = customerAgent;
+let currentAgent: Agent<UserContext> = customerAgent;
 console.log(`SpeedNet support (handoffs) - logged in as ${currentCustomer.name}`);
 console.log('Type "exit" to quit.\n');
 

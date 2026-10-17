@@ -66,7 +66,7 @@ Most lessons are interactive chats: type a message, and type `exit` to quit.
 | 4   | Structured outputs with Zod   | `src/04-structured-outputs`   | ✅     |
 | 5   | Multi-agent: agents as tools  | `src/05-agents-as-tools`      | ✅     |
 | 6   | Agent handoffs                | `src/06-handoffs`             | ✅     |
-| 7   | Input guardrails              | `src/07-input-guardrails`     | ⏳     |
+| 7   | Input guardrails              | `src/07-input-guardrails`     | ✅     |
 | 8   | Output guardrails             | `src/08-output-guardrails`    | ⏳     |
 | 9   | Phase 1 checkpoint            | `src/09-checkpoint-phase-1`   | ⏳     |
 | 10  | Conversation and chat threads | `src/10-chat-threads`         | ⏳     |
@@ -84,7 +84,7 @@ The smallest working agent: a name, instructions and a model. It shows:
 - **A chat loop**: `readline` with `for await`, so the agent keeps chatting until you type `exit`.
 - **Conversation history**: each turn sends the previous messages, so the agent remembers your name. After a run, `history = result.history` keeps the whole conversation, so you don't have to rebuild assistant messages by hand.
 
-`math-agent.ts` is a second agent whose system prompt limits it to step-by-step math tutoring.
+`math-agent.ts` runs a second agent whose system prompt (`src/instructions/math-tutor.ts`) limits it to step-by-step math tutoring.
 
 ### 3. Tool calling
 
@@ -144,9 +144,50 @@ Lessons learned while building these:
 - A handoff `inputFilter` controls what history the next agent sees. Here it gets a plain text-only chat so it acts instead of repeating "I'm transferring you".
 - Refund amounts are always calculated in code, never by the model.
 
-### 7 & 8. Input and output guardrails
+### 7. Input guardrails
 
-Guardrails are checks that run **before** the agent (on the user's input) or **after** it (on the agent's answer). If one trips, the run stops with an `InputGuardrailTripwireTriggered` or `OutputGuardrailTripwireTriggered` error, e.g. to block off-topic requests or answers that leak sensitive data.
+Guardrails are checks that run **before** the agent (on the user's input) or **after** it (on the agent's answer). If one trips, the run stops with an `InputGuardrailTripwireTriggered` error.
+
+The lesson's **Math Agent** only answers math. A small classifier agent (with a Zod `outputType`) decides whether each message is a math question, and the guardrail trips when it isn't:
+
+```ts
+export const mathInputGuardrail: InputGuardrail = {
+  name: "Math only",
+  runInParallel: false, // the Math Agent waits for the check
+  execute: async (args) => {
+    const { text, output } = await classifyLatestUserMessage(mathClassifier, args);
+    return { tripwireTriggered: !output.isMath, outputInfo: { input: text, ...output } };
+  },
+};
+
+const mathAgent = new Agent({ name: "Math Agent", ..., inputGuardrails: [mathInputGuardrail] });
+```
+
+The chat loop catches `InputGuardrailTripwireTriggered`, shows the classifier's reason and removes the blocked message from the history.
+
+Guardrails live in `src/guardrails/`, split by where they attach:
+
+| Level                    | Attach to                         | Use for                          |
+| ------------------------ | --------------------------------- | -------------------------------- |
+| `entry/`                 | `new Agent({ inputGuardrails })`  | Topic checks ("math only")       |
+| `run/`                   | `new Runner({ inputGuardrails })` | Company policy (PII, jailbreaks) |
+| `tool/` (argument level) | `tool({ inputGuardrails })`       | Risky tool arguments (refunds)   |
+
+Things to notice:
+
+- **Input guardrails only run on the first agent of a run.** With handoffs, put them on the entry agent.
+- **`runInParallel: false`** blocks the agent until the check passes. Blocked questions took about 2 s instead of about 6 s, and the Math Agent never ran.
+- **Check only the latest message.** The guardrail receives the whole history, so checking all of it would let one old off-topic message block every later turn.
+- **Two layers.** The guardrail blocks off-topic messages, and the agent's prompt ignores the off-topic part of mixed ones ("tell me a joke, also what is 5 + 5?").
+
+Pitfalls hit while building it:
+
+- "Write a poem teaching how to add 2 numbers" (the video's example) was first **allowed**, because the topic is math. The fix was to decide by **what the user wants back** (a solution vs a poem or code), not by the topic.
+- "Now explain step 2 again" was **blocked**, because the classifier only saw that one message. The fix was to pass the previous assistant reply as context only. "Now turn that into a poem" is still blocked.
+
+### 8. Output guardrails
+
+Checks the agent's answer before it reaches the user. If one trips, the run stops with an `OutputGuardrailTripwireTriggered` error, e.g. for answers that leak sensitive data.
 
 ### 9. Phase 1 checkpoint
 
@@ -186,15 +227,43 @@ Connect the agent to external MCP servers (local via stdio, remote via HTTP, or 
 ```text
 src/
 ├── 02-hello-world/ … 15-mcp/   # one folder per lesson
+│   ├── agents.ts               # the lesson's agents
+│   └── index.ts                # entry point: the chat loop
+├── instructions/               # one file per agent prompt (math-tutor.ts, sql-builder.ts, ...)
+├── constants/                  # DEFAULT_MODEL, USER_LOCATION
+├── core/                       # global auth and context
+│   ├── context.ts              # UserContext: the one run context (optional broadband account)
+│   ├── auth.ts                 # requireUser, requireCustomer
+│   └── session.ts              # demo logins: DEMO_USER, DEMO_CUSTOMER
 ├── tools/                      # reusable tools, shared across lessons
 │   ├── index.ts                # allTools, userTools exports
 │   ├── weather/                # mock weather (5 cities)
 │   ├── math/                   # calculator
-│   ├── jsonplaceholder/        # real API calls + user context
+│   ├── jsonplaceholder/        # real API calls for the logged-in user
 │   └── broadband/              # mock customers, refund rules
+├── guardrails/                 # checks the SDK runs around an agent
+│   ├── index.ts                # guardrail exports
+│   ├── shared/classify.ts      # run a classifier on the latest user message
+│   ├── entry/math/             # Agent-level: math-only input guardrail
+│   ├── entry/sql/              # Agent-level: read-only SQL output guardrail
+│   ├── run/                    # Runner-level (planned: PII)
+│   └── tool/                   # tool arguments (planned: refund amount)
 └── shared/
     └── log.ts                  # pretty logging of tool calls and handoffs
 ```
+
+Every lesson is built the same way:
+
+- The prompt lives in `src/instructions` as a function of the run context, so every agent can read the logged-in user the same way:
+
+  ```ts
+  export const buildAccountAssistantInstructions: InstructionsBuilder = (runContext) => `
+  You are an account assistant helping ${runContext.context.name}. ...`;
+  ```
+
+- The agent lives in the lesson's `agents.ts` (`new Agent<UserContext>({ ..., model: DEFAULT_MODEL })`).
+- `index.ts` only runs the chat loop, and every run passes the logged-in user: `run(agent, history, { context: DEMO_USER })`.
+- Each folder exports through its `index.ts`.
 
 Each tool folder follows the same layout:
 
