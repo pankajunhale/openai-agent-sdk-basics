@@ -72,8 +72,8 @@ Most lessons are interactive chats: type a message, and type `exit` to quit.
 | 7   | Input guardrails              | `src/07-input-guardrails`     | ✅     |
 | 8   | Output guardrails             | `src/08-output-guardrails`    | ✅     |
 | 9   | Phase 1 checkpoint            | (recap, no code)              | ✅     |
-| 10  | Conversation and chat threads | `src/10-chat-threads`         | ⏳     |
-| 11  | Server conversations          | `src/11-server-conversations` | ⏳     |
+| 10  | Conversation and chat threads | `src/10-chat-threads`         | ✅     |
+| 11  | Server conversations          | `src/11-server-conversations` | ✅     |
 | 12  | Runtime local context         | `src/12-local-context`        | ✅     |
 | 13  | Streaming responses           | `src/13-streaming`            | ⏳     |
 | 14  | Human in the loop             | `src/14-human-in-loop`        | ⏳     |
@@ -239,10 +239,36 @@ A recap video with no new code. Phase 1 (lessons 2–8) covered agents, tools, s
 
 ### 10 & 11. Conversations and chat threads
 
-How an agent remembers earlier messages:
+Both lessons use the same **Math Agent** and show two ways for it to remember earlier messages.
 
-- **Local history** (lesson 10): you keep `result.history` yourself, or use a `MemorySession`.
-- **Server conversations** (lesson 11): OpenAI stores the thread (`OpenAIConversationsSession`) and you only send the new message.
+**Lesson 10: local history.** Your code keeps the conversation and sends all of it on every turn:
+
+```ts
+let history: AgentInputItem[] = [];
+
+history.push({ role: "user", content: userInput });
+const result = await run(mathAgent, history, { context: currentUser });
+history = result.history; // includes the reply (and any tool calls) for the next turn
+```
+
+**Lesson 11: server conversations.** OpenAI stores the conversation. The lesson creates it once with `generateConversationId()` from `src/shared/utility.ts`, then sends only the new message:
+
+```ts
+const conversationId = await generateConversationId(); // client.conversations.create({}) -> "conv_..."
+
+const result = await run(mathAgent, userInput, { context: currentUser, conversationId });
+```
+
+Things to notice:
+
+- **No history array in lesson 11.** There's no `history.push` and no `history = result.history`; follow-ups still work. "What is 12 * 8?" then "Now divide that by 4" returns 24, because the server remembered 96.
+- **Trade-off.** Local history costs nothing extra and you can edit it (lesson 7 drops blocked messages with `history.pop()`). A server conversation keeps requests small and survives restarts if you save the id, but the history lives on OpenAI's side.
+- **Don't mix them.** With a `conversationId`, sending the full history as well would add every old message to the conversation again.
+- **The id is created at startup**, so each run of lesson 11 starts a new conversation. Reuse a saved `conv_...` id to continue an old one.
+
+Pitfall hit while testing:
+
+- "What was my first question?" was refused in lesson 11. That's the math tutor prompt (math questions only), not a memory problem; test memory with a math follow-up instead.
 
 ### 12. Runtime local context
 
@@ -292,7 +318,8 @@ src/
 │   ├── run/                    # Runner-level (planned: PII)
 │   └── tool/                   # tool arguments (planned: refund amount)
 └── shared/
-    └── log.ts                  # debugLog, logRunItems (only when DEBUG=true), toPrettyJson
+    ├── log.ts                  # debugLog, logRunItems (only when DEBUG=true), toPrettyJson
+    └── utility.ts              # generateConversationId (server-managed conversation)
 ```
 
 Every lesson is built the same way:
@@ -324,6 +351,7 @@ Each tool folder follows the same layout:
 ## Tech stack
 
 - [`@openai/agents`](https://www.npmjs.com/package/@openai/agents) 0.20, the OpenAI Agents SDK
+- [`openai`](https://www.npmjs.com/package/openai) 7 client, for creating server-managed conversations (lesson 11)
 - [`zod`](https://zod.dev) 4 for tool and output schemas
 - TypeScript 6, run directly with [`tsx`](https://github.com/privatenumber/tsx)
 - ESLint 9 + [`typescript-eslint`](https://typescript-eslint.io) for linting, Prettier for formatting
