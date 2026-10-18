@@ -14,8 +14,8 @@ A TypeScript learning project following Piyush Garg's 15-video OpenAI Agents SDK
 
 ## Layout
 Every folder exports through its `index.ts`; import from there.
-- `src/NN-topic/agents.ts`: the lesson's agents (`new Agent({ name, instructions, model: DEFAULT_MODEL, ... })`)
-- `src/NN-topic/index.ts`: entry point, one call: `await runChatLoop(agent, { context: DEMO_USER, intro })`
+- `src/NN-topic/index.ts`: the only file in a lesson. It creates the lesson's agents (`new Agent<UserContext>({ name, instructions, model: DEFAULT_MODEL, ... })`) and runs its own readline chat loop, handling `run()` options, history, handoffs (`result.lastAgent`) and guardrail errors, so a reader sees everything in one file
+- Lessons print only the agent's answer (and guardrail-block messages): no intro, tool lists or "Bye!". Use `debugLog`/`logRunItems` from `#shared/log` for anything else
 - `src/instructions/<agent>.ts`: one file per agent prompt (classifier prompts too). Every prompt is a function `export const build<Agent>Instructions: InstructionsBuilder = (runContext) => ...` (name the param `_runContext` if unused)
 - One run context across the app: `UserContext` (`id`, `email`, `name`, optional `broadband: { customerId }`). Don't add new context types; add an optional property instead
 - Agents are typed with their context (`new Agent<UserContext>(...)`) and every run passes it: `run(agent, history, { context: DEMO_USER })`
@@ -23,8 +23,7 @@ Every folder exports through its `index.ts`; import from there.
 - `src/core/`: global auth and context: `UserContext`, `requireUser`/`requireCustomer` (throws if the user has no broadband account), demo logins (`DEMO_USER`, `DEMO_CUSTOMER`)
 - `src/tools/<domain>/`: reusable tools, exported from `src/tools/index.ts`
 - `src/guardrails/<entry|run|tool>/<domain>/`: guardrails, exported from `src/guardrails/index.ts`
-- `src/shared/chat-loop.ts`: `runChatLoop` (readline loop, history, handoffs via `result.lastAgent`, guardrail tripwires, `input` option for `_try` scripts)
-- `src/shared/log.ts`: `toPrettyJson` and `logRunItems` for tool and handoff logging
+- `src/shared/log.ts`: `debugLog(label, ...values)` and `logRunItems(result.newItems)` print only when `DEBUG=true` in `.env`; `toPrettyJson` formats objects. Lessons don't log by default; add a call where it helps
 
 ## Code style
 - Double quotes, 2-space indent
@@ -35,7 +34,7 @@ Every folder exports through its `index.ts`; import from there.
 
 ## Commands
 - `npm start src/NN-topic/index.ts` runs a lesson; `npm run check` (typecheck + lint + format check) must pass after every change; `npm run lint:fix` and `npm run format` auto-fix
-- Chat lessons read stdin, so test them with a temporary `_try.ts` script, then delete it: either `run()` the lesson's agents directly, or call `runChatLoop(agent, { context, input: Readable.from(["question\n", ...]) })`. Don't pipe input into the chat loop from the shell.
+- Chat lessons read stdin, and importing a lesson's `index.ts` starts its chat loop. Test with a temporary `_try.ts` script that defines a copy of the lesson's agent (same prompt builder, tools and guardrails) and calls `run()` with fixed questions, then delete it. Don't pipe input into the chat loop from the shell.
 
 ## Safety
 - Never read, print or commit `.env`; `.env.example` holds only a placeholder

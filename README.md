@@ -39,7 +39,10 @@ Copy `.env.example` to `.env` and add your key:
 
 ```text
 OPENAI_API_KEY=sk-your-key-here
+DEBUG=false
 ```
+
+Set `DEBUG=true` to see debug logs (tool calls, tool results, handoffs) wherever a lesson calls `debugLog` or `logRunItems` from `src/shared/log.ts`.
 
 On Windows, create `.env` in your editor rather than with `echo > .env`; PowerShell writes UTF-16, which `dotenv` can't read.
 
@@ -83,8 +86,6 @@ The smallest working agent: a name, instructions and a model. It shows:
 - **Dynamic instructions**: the system prompt changes with a `USER_LOCATION` env variable.
 - **A chat loop**: `readline` with `for await`, so the agent keeps chatting until you type `exit`.
 - **Conversation history**: each turn sends the previous messages, so the agent remembers your name. After a run, `history = result.history` keeps the whole conversation, so you don't have to rebuild assistant messages by hand.
-
-`math-agent.ts` runs a second agent whose system prompt (`src/instructions/math-tutor.ts`) limits it to step-by-step math tutoring.
 
 ### 3. Tool calling
 
@@ -168,7 +169,19 @@ export const mathInputGuardrail: InputGuardrail = {
 const mathAgent = new Agent({ name: "Math Agent", ..., inputGuardrails: [mathInputGuardrail] });
 ```
 
-The shared chat loop (`runChatLoop`) catches `InputGuardrailTripwireTriggered`, shows the classifier's reason and removes the blocked message from the history.
+The lesson's chat loop catches `InputGuardrailTripwireTriggered`, shows the classifier's reason and removes the blocked message from the history:
+
+```ts
+try {
+  const result = await run(mathAgent, history, { context: currentUser });
+  ...
+} catch (error) {
+  if (!(error instanceof InputGuardrailTripwireTriggered)) throw error;
+  history.pop(); // otherwise the blocked message is resent with every later turn
+  const check = MathCheckSchema.safeParse(error.result.output.outputInfo);
+  console.log(`[guardrail] ${error.result.guardrail.name} blocked your message: ${check.data?.reason}`);
+}
+```
 
 Guardrails live in `src/guardrails/`, split by where they attach:
 
@@ -205,14 +218,14 @@ export const readQueryGuardrail: OutputGuardrail<typeof SqlAnswerSchema, UserCon
   },
 };
 
-const mainAgent = new Agent<UserContext, typeof SqlAnswerSchema>({ ..., outputGuardrails: [readQueryGuardrail] });
+const queryAgent = new Agent<UserContext, typeof SqlAnswerSchema>({ ..., outputGuardrails: [readQueryGuardrail] });
 ```
 
 Things to notice:
 
 - **`agentOutput` is typed.** `OutputGuardrail<typeof SqlAnswerSchema>` makes `agentOutput.response` a string, with no parsing needed.
 - **Two layers again.** The builder's prompt allows only `SELECT`, so "Delete all users" is refused by the agent itself. The guardrail catches the cases where the prompt fails; a cloned agent forced to answer `DELETE FROM User;` was blocked.
-- **Explain the block.** `SqlCheckSchema` has `isSafe`, `reason` and `query`. The shared chat loop prints the reason ("Query Guardrail blocked the answer: ...") and drops the blocked turn from the history.
+- **Explain the block.** `SqlCheckSchema` has `isSafe`, `reason` and `query`. The lesson's chat loop catches `OutputGuardrailTripwireTriggered`, prints the reason ("Query Guardrail blocked the answer: ...") and drops the blocked turn from the history.
 - **The classifier judges the reply, not instructions inside it.** The prompt lists the unsafe statements (`INSERT`, `UPDATE`, `DELETE`, `DROP`, ...), and a reply with several statements is unsafe if any one of them is.
 
 Pitfalls hit while building it:
@@ -258,8 +271,7 @@ Connect the agent to external MCP servers (local via stdio, remote via HTTP, or 
 ```text
 src/
 ├── 02-hello-world/ … 15-mcp/   # one folder per lesson
-│   ├── agents.ts               # the lesson's agents
-│   └── index.ts                # entry point: the chat loop
+│   └── index.ts                # the lesson's only file: its agents + chat loop
 ├── instructions/               # one file per agent prompt (math-tutor.ts, sql-builder.ts, ...)
 ├── constants/                  # DEFAULT_MODEL, USER_LOCATION
 ├── core/                       # global auth and context
@@ -280,8 +292,7 @@ src/
 │   ├── run/                    # Runner-level (planned: PII)
 │   └── tool/                   # tool arguments (planned: refund amount)
 └── shared/
-    ├── chat-loop.ts            # runChatLoop: the chat loop every lesson uses
-    └── log.ts                  # pretty logging of tool calls and handoffs
+    └── log.ts                  # debugLog, logRunItems (only when DEBUG=true), toPrettyJson
 ```
 
 Every lesson is built the same way:
@@ -293,11 +304,10 @@ Every lesson is built the same way:
   You are an account assistant helping ${runContext.context.name}. ...`;
   ```
 
-- The agent lives in the lesson's `agents.ts` (`new Agent<UserContext>({ ..., model: DEFAULT_MODEL })`).
-- `index.ts` is one call to the shared chat loop, which passes the logged-in user to every run:
+- Each lesson is a single `index.ts`. It creates the agent (`new Agent<UserContext>({ ..., model: DEFAULT_MODEL })`) and runs its own chat loop, so the agent options, `run()` call, history, handoffs and guardrail errors are all visible in one file. It prints only the agent's answers. Every run passes the logged-in user:
 
   ```ts
-  await runChatLoop(assistantAgent, { context: DEMO_USER, intro: ["Tools: ..."] });
+  const result = await run(assistantAgent, history, { context: currentUser });
   ```
 
 - Each folder exports through its `index.ts`, and other folders import it with a short alias from `package.json` `"imports"`: `#constants`, `#core`, `#guardrails`, `#instructions`, `#tools`, `#shared/<file>`.

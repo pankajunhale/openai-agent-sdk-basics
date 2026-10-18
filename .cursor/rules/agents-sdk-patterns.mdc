@@ -27,14 +27,15 @@ errorFunction: (_context, error) =>
 - Tools must never accept a user or customer id from the model; read it from context and check ownership of any id the model passes.
 
 ## History and chat loops
-- Lessons use `runChatLoop` from `src/shared/chat-loop.ts`; change behaviour there (or via its options) instead of copying the loop.
+- Each lesson keeps its own chat loop in `index.ts` (no shared loop helper), so the run options, history and error handling stay visible in the lesson.
+- When a guardrail trips, `history.pop()` the blocked message, or it is resent with every later turn.
 - Keep history with `history = result.history` (it includes tool calls). Don't push assistant text by hand.
 - With an `outputType`, `finalOutput` is an object; print it with `toPrettyJson`.
 
 ## Multi-agent
 - Agents as tools: `agent.asTool({ toolName, toolDescription })`. Context is passed to the nested run; only the specialist's final text returns.
 - Handoffs: continue the next turn with `result.lastAgent`. Prefix instructions with `RECOMMENDED_PROMPT_PREFIX` from `@openai/agents-core/extensions`.
-- `removeAllTools` alone breaks gpt-5 models (400 "message ... without its required reasoning item"). Use the `plainChatHistory` filter in `src/06-handoffs/agents.ts`, which also strips assistant message ids.
+- `removeAllTools` alone breaks gpt-5 models (400 "message ... without its required reasoning item"). Use the `plainChatHistory` filter in `src/06-handoffs/index.ts`, which also strips assistant message ids.
 - A handoff `inputFilter` removes handoff items from `newItems`, so detect transfers by comparing agents before and after the run.
 
 ## Prompts

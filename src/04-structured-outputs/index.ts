@@ -1,11 +1,44 @@
 import "dotenv/config";
-import { DEMO_USER } from "#core";
-import { runChatLoop } from "#shared/chat-loop";
-import { allTools } from "#tools";
-import { assistantAgent } from "./agents.js";
+import * as readline from "node:readline";
+import { stdin as input, stdout as output } from "node:process";
+import { Agent, run } from "@openai/agents";
+import type { AgentInputItem } from "@openai/agents";
+import { DEFAULT_MODEL } from "#constants";
+import { DEMO_USER as currentUser } from "#core";
+import type { UserContext } from "#core";
+import { buildGeneralAssistantInstructions } from "#instructions";
+import { toPrettyJson } from "#shared/log";
+import { allTools, WeatherAnswerSchema } from "#tools";
 
-// finalOutput is a { weather, message } object, so the loop prints it as JSON
-await runChatLoop(assistantAgent, {
-  context: DEMO_USER,
-  intro: [`Tools: ${allTools.map((t) => t.name).join(", ")}`],
+const assistantAgent = new Agent<UserContext, typeof WeatherAnswerSchema>({
+  name: "General Assistant",
+  instructions: buildGeneralAssistantInstructions,
+  model: DEFAULT_MODEL,
+  tools: allTools,
+  outputType: WeatherAnswerSchema, // structured output
 });
+
+const rl = readline.createInterface({ input, output });
+let history: AgentInputItem[] = [];
+
+rl.setPrompt("User: ");
+rl.prompt();
+
+// for-await ends the loop (and closes readline) on "exit", Ctrl+C or end of input
+for await (const line of rl) {
+  const userInput = line.trim();
+  if (userInput.toLowerCase() === "exit") break;
+  if (!userInput) {
+    rl.prompt();
+    continue;
+  }
+
+  history.push({ role: "user", content: userInput });
+  const result = await run(assistantAgent, history, { context: currentUser });
+
+  // finalOutput is a typed { weather, message } object, not a string
+  console.log(`${assistantAgent.name}:\n${toPrettyJson(result.finalOutput)}\n`);
+  history = result.history;
+  rl.prompt();
+}
+rl.close();

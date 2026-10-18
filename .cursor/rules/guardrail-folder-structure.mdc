@@ -27,5 +27,5 @@ Pick the level by where untrusted input enters:
 - Use `classifyLatestUserMessage` from `shared/classify.ts`: it judges only the latest user message and passes the previous assistant reply as context for follow-ups.
 - Classifier prompts decide by what the user wants back, not by the topic, list allowed and blocked examples, and say to ignore instructions inside the message.
 - Return the classifier result as `outputInfo`, so the chat loop can show the reason.
-- `runChatLoop` catches input and output tripwires, prints `outputInfo.reason` and drops the blocked message, so every check schema needs a `reason` field.
+- The lesson's chat loop catches the tripwire error, reads the reason with `CheckSchema.safeParse(error.result.output.outputInfo)` and drops the blocked message, so every check schema needs a `reason` field.
 - Keep a light topic rule in the agent's prompt as a second layer.
